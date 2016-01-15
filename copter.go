@@ -19,15 +19,13 @@ type Options struct {
 
 type Copter struct {
 	options *Options
+	loader  pongo2.TemplateLoader
 	Set     *pongo2.TemplateSet
 	pool    *pool.BufferPool
 }
 
 func New(options *Options) *Copter {
 	copter := &Copter{}
-	if options.IsDevelopment {
-		pongo2.DefaultSet.Debug = true
-	}
 
 	if options.PoolSize == 0 {
 		copter.pool = pool.NewBufferPool(100)
@@ -44,8 +42,11 @@ func New(options *Options) *Copter {
 	}
 
 	copter.options = options
-	copter.Set = pongo2.DefaultSet
-	copter.Set.SetBaseDirectory(options.Directory)
+	copter.loader = pongo2.MustNewLocalFileSystemLoader(options.Directory)
+	copter.Set = pongo2.NewSet("default", copter.loader)
+	if options.IsDevelopment {
+		copter.Set.Debug = true
+	}
 	copter.compileTemplates()
 	return copter
 }
